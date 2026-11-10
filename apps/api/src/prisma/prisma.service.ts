@@ -1,0 +1,21 @@
+import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { ENV, type Env } from '../config/env.js';
+import { PrismaClient } from '../generated/prisma/client.js';
+
+@Injectable()
+export class PrismaService extends PrismaClient implements OnModuleDestroy {
+  constructor(@Inject(ENV) env: Env) {
+    super({
+      adapter: new PrismaPg({
+        connectionString: env.BIRRRAIL_DATABASE_URL,
+        // Fail fast instead of hanging requests when Postgres is unreachable.
+        connectionTimeoutMillis: 5_000,
+      }),
+    });
+  }
+
+  async onModuleDestroy(): Promise<void> {
+    await this.$disconnect();
+  }
+}

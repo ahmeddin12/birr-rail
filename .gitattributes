@@ -1,0 +1,4 @@
+# Force LF everywhere so Prettier, shell scripts and CI agree, even with core.autocrlf=true on Windows.
+* text=auto eol=lf
+*.pdf binary
+*.png binary

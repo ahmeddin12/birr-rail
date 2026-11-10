@@ -1,0 +1,44 @@
+# Local development dependencies for Birr Rail. Not a production setup.
+# Explicit name: without it Compose names the project after this folder ("infra")
+# and can collide with other projects that also keep compose files in infra/.
+name: birr-rail
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: birrrail
+      POSTGRES_PASSWORD: birrrail
+      POSTGRES_DB: payments
+    ports:
+      # Loopback only: never expose a dev database with a known password to the LAN.
+      - '127.0.0.1:${BIRRRAIL_PG_PORT:-5440}:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Runs only when the volume is empty. Creates payments_test.
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      # Check over TCP: during init the server only listens on the unix socket,
+      # so a socket check would report healthy before init scripts finish.
+      test: ['CMD-SHELL', 'pg_isready -h 127.0.0.1 -U birrrail -d payments_test']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7
+    # BullMQ requires noeviction; AOF so queued jobs survive a container restart.
+    command: ['redis-server', '--appendonly', 'yes', '--maxmemory-policy', 'noeviction']
+    ports:
+      - '127.0.0.1:${BIRRRAIL_REDIS_PORT:-6390}:6379'
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:
+  redisdata:

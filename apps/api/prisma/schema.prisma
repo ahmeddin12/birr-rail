@@ -1,0 +1,11 @@
+// Birr Rail database schema. Tables arrive in Phase 1.
+// The connection URL lives in prisma.config.ts (Prisma 7), not here.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}

@@ -1,0 +1,31 @@
+{
+  "name": "birr-rail",
+  "private": true,
+  "description": "Sandbox-only payment orchestration layer for Ethiopian payment providers.",
+  "packageManager": "pnpm@11.24.0",
+  "engines": {
+    "node": ">=24.11"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "infra:up": "docker compose -f infra/docker-compose.yml up -d --wait",
+    "infra:down": "docker compose -f infra/docker-compose.yml down"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.0",
+    "eslint": "^10.0.0",
+    "eslint-config-prettier": "^10.0.0",
+    "globals": "^17.0.0",
+    "prettier": "^3.0.0",
+    "turbo": "^2.0.0",
+    "typescript": "catalog:",
+    "typescript-eslint": "^8.0.0"
+  }
+}
