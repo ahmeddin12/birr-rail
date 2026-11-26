@@ -3,6 +3,7 @@ import { Body, Controller, Get, type INestApplication, Post } from '@nestjs/comm
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { z } from 'zod';
+import { Public } from '../src/auth/public.decorator.js';
 import { ZodValidationPipe } from '../src/validation/zod-validation.pipe.js';
 import { bootApp } from './support/app.js';
 
@@ -10,6 +11,7 @@ const SECRET_IN_INTERNAL_ERROR = 'postgres password is hunter2';
 
 const echoSchema = z.object({ reference: z.string().min(1) });
 
+@Public()
 @Controller('__test__/errors')
 class ErrorTestController {
   @Get('crash')

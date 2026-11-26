@@ -1,4 +1,5 @@
 import { Controller, Get, Logger } from '@nestjs/common';
+import { Public } from '../auth/public.decorator.js';
 import { ApiError } from '../errors/api-error.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -7,6 +8,7 @@ interface ReadyResponse {
   checks: { database: 'up' };
 }
 
+@Public()
 @Controller()
 export class HealthController {
   private readonly logger = new Logger(HealthController.name);
