@@ -13,10 +13,11 @@ datasource db {
 }
 
 model Merchant {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name      String
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   apiKeys   ApiKey[]
+  payments  Payment[]
 
   @@map("merchants")
 }
@@ -34,4 +35,59 @@ model ApiKey {
 
   @@index([merchantId])
   @@map("api_keys")
+}
+
+/// Changes only through PaymentsService.transition(); see payment-state.ts for the allowed moves.
+enum PaymentStatus {
+  created
+  pending
+  succeeded
+  failed
+  expired
+  refunded
+
+  @@map("payment_status")
+}
+
+model Payment {
+  id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchantId        String         @map("merchant_id") @db.Uuid
+  merchant          Merchant       @relation(fields: [merchantId], references: [id], onDelete: Restrict)
+  /// Integer santim. The migration adds CHECK (amount_minor > 0).
+  amountMinor       BigInt         @map("amount_minor")
+  status            PaymentStatus  @default(created)
+  provider          String
+  /// The provider's own transaction reference. Our id is sent to the provider as its tx_ref.
+  providerRef       String?        @map("provider_ref")
+  merchantReference String?        @map("merchant_reference")
+  checkoutUrl       String?        @map("checkout_url")
+  returnUrl         String?        @map("return_url")
+  metadata          Json           @default("{}")
+  /// Incremented by every applied transition.
+  version           Int            @default(0)
+  expiresAt         DateTime?      @map("expires_at") @db.Timestamptz(6)
+  createdAt         DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime       @default(now()) @map("updated_at") @db.Timestamptz(6)
+  events            PaymentEvent[]
+
+  @@unique([provider, providerRef])
+  @@index([merchantId])
+  @@map("payments")
+}
+
+/// Append-only history: one row per applied status change.
+model PaymentEvent {
+  id         String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  paymentId  String         @map("payment_id") @db.Uuid
+  payment    Payment        @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  fromStatus PaymentStatus  @map("from_status")
+  toStatus   PaymentStatus  @map("to_status")
+  /// Why it happened, e.g. "provider_checkout_created" or "webhook:chapa".
+  reason     String
+  /// The payment's version after this change. Unique per payment, so a version can never be applied twice.
+  version    Int
+  createdAt  DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([paymentId, version])
+  @@map("payment_events")
 }

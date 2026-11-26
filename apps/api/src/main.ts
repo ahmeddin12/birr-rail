@@ -1,11 +1,10 @@
-import { existsSync } from 'node:fs';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import { APP_OPTIONS, configureApp } from './app.setup.js';
 import { ENV, type Env } from './config/env.js';
+import { loadLocalEnv } from './config/load-local-env.js';
 
-// Local convenience only. Variables already set in the environment win over the file.
-if (existsSync('.env')) process.loadEnvFile('.env');
+loadLocalEnv();
 
 const app = await NestFactory.create(AppModule, APP_OPTIONS);
 configureApp(app);

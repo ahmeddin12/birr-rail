@@ -8,6 +8,7 @@ import { ApiExceptionFilter } from './errors/api-exception.filter.js';
 import { HealthModule } from './health/health.module.js';
 import { buildPinoHttpOptions } from './logging/logger.options.js';
 import { MerchantsModule } from './merchants/merchants.module.js';
+import { PaymentsModule } from './payments/payments.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 
 @Module({
@@ -20,6 +21,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
     PrismaModule,
     AuthModule,
     MerchantsModule,
+    PaymentsModule,
     HealthModule,
   ],
   providers: [{ provide: APP_FILTER, useClass: ApiExceptionFilter }],

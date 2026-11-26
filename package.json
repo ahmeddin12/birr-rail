@@ -16,7 +16,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "infra:up": "docker compose -f infra/docker-compose.yml up -d --wait",
-    "infra:down": "docker compose -f infra/docker-compose.yml down"
+    "infra:down": "docker compose -f infra/docker-compose.yml down",
+    "merchant:create": "pnpm --filter @birr-rail/api merchant:create"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",

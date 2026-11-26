@@ -5,9 +5,9 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ApiKeysService } from '../src/auth/api-keys.service.js';
 import { CurrentMerchant } from '../src/auth/authenticated-request.js';
 import { hashApiKey } from '../src/auth/api-key.js';
-import { MerchantsService } from '../src/merchants/merchants.service.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { bootApp } from './support/app.js';
+import { type TestMerchant, createMerchantWithKey } from './support/fixtures.js';
 
 /** Not a real route: echoes which merchant the guard resolved, so tests can assert on it. */
 @Controller('__test__/whoami')
@@ -20,24 +20,18 @@ class WhoAmIController {
 
 describe('API key authentication', () => {
   let app: INestApplication<Server>;
-  let merchantA: { id: string; key: string; keyId: string };
-  let merchantB: { id: string; key: string };
+  let merchantA: TestMerchant;
+  let merchantB: TestMerchant;
 
   const whoami = (authorization?: string) => {
     const call = request(app.getHttpServer()).get('/__test__/whoami');
     return authorization === undefined ? call : call.set('Authorization', authorization);
   };
 
-  async function createMerchantWithKey(name: string) {
-    const merchant = await app.get(MerchantsService).create(name);
-    const issued = await app.get(ApiKeysService).issue(merchant.id);
-    return { id: merchant.id, key: issued.key, keyId: issued.id };
-  }
-
   beforeAll(async () => {
     app = await bootApp({ controllers: [WhoAmIController] });
-    merchantA = await createMerchantWithKey('Abebe Books');
-    merchantB = await createMerchantWithKey('Tigist Coffee');
+    merchantA = await createMerchantWithKey(app, 'Abebe Books');
+    merchantB = await createMerchantWithKey(app, 'Tigist Coffee');
   });
 
   afterAll(async () => {
@@ -73,7 +67,7 @@ describe('API key authentication', () => {
   });
 
   it('rejects a key once it is revoked, while the merchant’s other keys keep working', async () => {
-    const merchant = await createMerchantWithKey('Kebede Electronics');
+    const merchant = await createMerchantWithKey(app, 'Kebede Electronics');
     const spare = await app.get(ApiKeysService).issue(merchant.id);
     await whoami(`Bearer ${merchant.key}`).expect(200);
 
