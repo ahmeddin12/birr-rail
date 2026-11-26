@@ -1,4 +1,5 @@
-import { Controller, Get, Logger, ServiceUnavailableException } from '@nestjs/common';
+import { Controller, Get, Logger } from '@nestjs/common';
+import { ApiError } from '../errors/api-error.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 interface ReadyResponse {
@@ -26,7 +27,9 @@ export class HealthController {
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       this.logger.error(`Readiness check failed: database unreachable (${reason})`);
-      throw new ServiceUnavailableException({ status: 'not_ready', checks: { database: 'down' } });
+      throw new ApiError(503, 'api_error', 'not_ready', 'The service is not ready.', {
+        checks: { database: 'down' },
+      });
     }
     return { status: 'ready', checks: { database: 'up' } };
   }

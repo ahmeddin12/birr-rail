@@ -9,6 +9,7 @@ describe('parseEnv', () => {
       NODE_ENV: 'development',
       BIRRRAIL_PORT: 3000,
       BIRRRAIL_DATABASE_URL: DATABASE_URL,
+      BIRRRAIL_LOG_LEVEL: 'info',
     });
   });
 
@@ -37,6 +38,12 @@ describe('parseEnv', () => {
     expect(() => parseEnv({ BIRRRAIL_DATABASE_URL: DATABASE_URL, NODE_ENV: 'staging' })).toThrow(
       /NODE_ENV/,
     );
+  });
+
+  it('rejects an unknown log level', () => {
+    expect(() =>
+      parseEnv({ BIRRRAIL_DATABASE_URL: DATABASE_URL, BIRRRAIL_LOG_LEVEL: 'verbose' }),
+    ).toThrow(/BIRRRAIL_LOG_LEVEL/);
   });
 
   it('never echoes the rejected value, which may contain a password', () => {

@@ -6,6 +6,9 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   BIRRRAIL_PORT: z.coerce.number().int().min(1).max(65_535).default(3000),
   BIRRRAIL_DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
+  BIRRRAIL_LOG_LEVEL: z
+    .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
+    .default('info'),
 });
 
 export type Env = z.infer<typeof envSchema>;
