@@ -13,11 +13,12 @@ datasource db {
 }
 
 model Merchant {
-  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name      String
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  apiKeys   ApiKey[]
-  payments  Payment[]
+  id              String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  apiKeys         ApiKey[]
+  payments        Payment[]
+  idempotencyKeys IdempotencyKey[]
 
   @@map("merchants")
 }
@@ -77,17 +78,48 @@ model Payment {
 
 /// Append-only history: one row per applied status change.
 model PaymentEvent {
-  id         String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  paymentId  String         @map("payment_id") @db.Uuid
-  payment    Payment        @relation(fields: [paymentId], references: [id], onDelete: Restrict)
-  fromStatus PaymentStatus  @map("from_status")
-  toStatus   PaymentStatus  @map("to_status")
+  id         String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  paymentId  String        @map("payment_id") @db.Uuid
+  payment    Payment       @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  fromStatus PaymentStatus @map("from_status")
+  toStatus   PaymentStatus @map("to_status")
   /// Why it happened, e.g. "provider_checkout_created" or "webhook:chapa".
   reason     String
   /// The payment's version after this change. Unique per payment, so a version can never be applied twice.
   version    Int
-  createdAt  DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
 
   @@unique([paymentId, version])
   @@map("payment_events")
+}
+
+enum IdempotencyStatus {
+  in_progress
+  completed
+
+  @@map("idempotency_status")
+}
+
+/// One row per (merchant, Idempotency-Key). The unique constraint decides which request runs;
+/// every other request with the same key gets the stored response, a 409 or a 422.
+model IdempotencyKey {
+  id             String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  merchantId     String            @map("merchant_id") @db.Uuid
+  merchant       Merchant          @relation(fields: [merchantId], references: [id], onDelete: Restrict)
+  key            String            @db.VarChar(255)
+  requestMethod  String            @map("request_method")
+  requestPath    String            @map("request_path")
+  /// SHA-256 of method, path and canonical body. A different request reusing the key gets a 422.
+  requestHash    String            @map("request_hash") @db.Char(64)
+  status         IdempotencyStatus @default(in_progress)
+  /// While in progress, other requests get a 409 until this passes. After it, the original is
+  /// presumed crashed and its outcome is recorded as unknown.
+  lockedUntil    DateTime          @map("locked_until") @db.Timestamptz(6)
+  responseStatus Int?              @map("response_status")
+  responseBody   Json?             @map("response_body")
+  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  completedAt    DateTime?         @map("completed_at") @db.Timestamptz(6)
+
+  @@unique([merchantId, key])
+  @@map("idempotency_keys")
 }

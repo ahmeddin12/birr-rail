@@ -6,6 +6,9 @@ import type { AuthenticatedRequest } from './authenticated-request.js';
 import { parseBearerToken } from './api-key.js';
 import { IS_PUBLIC } from './public.decorator.js';
 
+/** HTTP requires a 401 to say which authentication scheme to use. */
+const CHALLENGE = { 'WWW-Authenticate': 'Bearer' };
+
 /** Registered globally: a route is protected unless explicitly marked @Public(). */
 @Injectable()
 export class ApiKeyGuard implements CanActivate {
@@ -31,6 +34,8 @@ export class ApiKeyGuard implements CanActivate {
         'authentication_error',
         'missing_api_key',
         'No API key provided. Send it as "Authorization: Bearer <key>".',
+        null,
+        CHALLENGE,
       );
     }
 
@@ -43,6 +48,8 @@ export class ApiKeyGuard implements CanActivate {
         'authentication_error',
         'invalid_api_key',
         'The API key is invalid or has been revoked.',
+        null,
+        CHALLENGE,
       );
     }
 

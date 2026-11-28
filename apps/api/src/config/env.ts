@@ -9,6 +9,14 @@ const envSchema = z.object({
   BIRRRAIL_LOG_LEVEL: z
     .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
     .default('info'),
+  /** How long a customer has to pay before the payment may expire. */
+  BIRRRAIL_PAYMENT_TTL_MINUTES: z.coerce.number().int().min(1).max(1_440).default(30),
+  /** How long a request may hold an Idempotency-Key. Must exceed the slowest provider call. */
+  BIRRRAIL_IDEMPOTENCY_LEASE_SECONDS: z.coerce.number().int().min(5).max(3_600).default(60),
+  BIRRRAIL_SANDBOX_CHECKOUT_URL: z
+    .url({ protocol: /^https?$/ })
+    .default('http://localhost:3000/sandbox/checkout'),
+  BIRRRAIL_SANDBOX_SLOW_MS: z.coerce.number().int().min(0).max(30_000).default(3_000),
 });
 
 export type Env = z.infer<typeof envSchema>;

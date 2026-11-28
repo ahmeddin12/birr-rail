@@ -7,7 +7,8 @@ import {
   Logger,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
-import { ApiError, type ApiErrorBody, type ApiErrorType } from './api-error.js';
+import { requestIdOf } from '../logging/request-id.js';
+import { ApiError, type ApiErrorType, toErrorBody } from './api-error.js';
 
 const GENERIC_SERVER_ERROR =
   'An unexpected error occurred. Quote the request_id when reporting it.';
@@ -33,21 +34,10 @@ export class ApiExceptionFilter implements ExceptionFilter {
     if (error.status >= 500 && !(exception instanceof ApiError)) {
       this.logger.error(exception);
     }
-    if (error.status === 401) {
-      response.setHeader('WWW-Authenticate', 'Bearer');
+    for (const [name, value] of Object.entries(error.headers)) {
+      response.setHeader(name, value);
     }
-
-    const body: ApiErrorBody = {
-      error: {
-        type: error.type,
-        code: error.code,
-        message: error.message,
-        // Always a string: buildPinoHttpOptions generates it for every request.
-        request_id: typeof request.id === 'string' ? request.id : 'unknown',
-        details: error.details,
-      },
-    };
-    response.status(error.status).json(body);
+    response.status(error.status).json(toErrorBody(error, requestIdOf(request)));
   }
 }
 

@@ -10,7 +10,17 @@ describe('parseEnv', () => {
       BIRRRAIL_PORT: 3000,
       BIRRRAIL_DATABASE_URL: DATABASE_URL,
       BIRRRAIL_LOG_LEVEL: 'info',
+      BIRRRAIL_PAYMENT_TTL_MINUTES: 30,
+      BIRRRAIL_IDEMPOTENCY_LEASE_SECONDS: 60,
+      BIRRRAIL_SANDBOX_CHECKOUT_URL: 'http://localhost:3000/sandbox/checkout',
+      BIRRRAIL_SANDBOX_SLOW_MS: 3_000,
     });
+  });
+
+  it('refuses an idempotency lease too short to cover a provider call', () => {
+    expect(() =>
+      parseEnv({ BIRRRAIL_DATABASE_URL: DATABASE_URL, BIRRRAIL_IDEMPOTENCY_LEASE_SECONDS: '1' }),
+    ).toThrow(/BIRRRAIL_IDEMPOTENCY_LEASE_SECONDS/);
   });
 
   it('coerces the port from its string form', () => {
